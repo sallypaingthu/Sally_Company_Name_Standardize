@@ -1,0 +1,97 @@
+Case Study Discussion - Sally Soo
+-----------------------------------------
+1. Approach & Assumptions (Documentation)
+-----------------------------------------
+• Describe your approach to:
+
+Q: 	Identifying matches and mismatches
+A:	All company names from System A (CRM), System B (Finance), and Excel (Manual Tracking) are loaded.
+	A canonicalize_company_name() function standardizes company names by:
+	- Lowercasing
+	- Removing common suffixes (eg. Ltd, Inc)
+	- Removing punctuation and whitespace
+	- Converting to uppercase
+	Canonical names are compared across sources using:
+	- Exact match
+	- Substring check
+	- Fuzzy matching via thefuzz (with a threshold of 85)
+
+Q:  Resolving discrepancies in company names
+A:	Matches are first identified by exact canonical names.
+	Remaining unmatched items are mapped using fuzzy logic 
+	(eg. Global X Corp. <--> Global-X Corporation)
+	All matched company names are consolidated into a single output.
+
+Q: 	Creating a “master reference table” of canonical names
+A:	The perform_canonical_matching() function produces a DataFrame with:
+	- canonical_name
+	- Original names from System A, System B, and Excel
+	Output is exported to output.xlsx, serving as the master reference.
+
+Q: 	Detail your assumptions (e.g., language casing, abbreviations, etc.)
+A:	Case-insensitive comparison.
+	Company suffixes like “Pte Ltd”, “Limited”, “Corp”, etc., are considered noise.
+	Manual entries in Excel are assumed to have the highest chance of variation.
+	Only English is used in company names.
+
+Q: 	Discuss how you would handle new or changed company names going forward
+A:	For new entries:
+	- Run canonicalization and fuzzy matching on new inputs.
+	- If no match found, treat as a new company and append to the mapping.
+	For changes:
+	- Re-run the standardization process regularly (e.g., daily ETL job).
+	- Use version control or audit trail if needed.
+	
+Q: 	Describe how changes will be synced across sources
+A:	Canonical names can be used as unique keys in downstream systems.
+	Updates in one source can be detected by comparing canonical values.
+	Optionally, sync updates back to source systems via their APIs (e.g., PATCH calls).
+	
+-------------------------------------------------	
+2. Technical Implementation (Code + Sample Files)
+-------------------------------------------------
+Q:	Provide Python code that:
+	Loads sample data from all 3 sources (you may simulate API responses and Excel input)
+	Maps inconsistent names to a canonical format using logic or mapping
+	Outputs a cleaned dataset that can be used for analytics
+	Optional: Include logic for fuzzy matching or manual override mapping
+A:	Files:
+	 system_a_b_API_Host.py: 	Simulated Flask APIs
+	standardize_names.py.py: 	Main driver script
+				   utils.py:	Contains matching and cleaning functions
+				output.xlsx: 	Output Data
+	Solution Workflow:
+		Load JSON from API endpoints (System A & B)
+		Load Excel using Pandas
+		Canonicalize company names
+		Match using exact, substring, and fuzzy logic
+		Output structured and cleaned results to Excel
+		
+---------------------------------------------
+3. Data Flow Diagram or Architecture (Visual)
+---------------------------------------------
+Q:	A high-level diagram showing how data flows between sources and where standardization occurs
+	(ETL process, staging, master data table, etc.)
+A:	System A (API)    ─┐
+	System B (API)     │
+	Excel (Manual)     ├──> ETL Script (standardize_names.py)
+					   │     └─> Canonicalize & Match
+					   └──> Output: Cleaned Excel (output.xlsx)
+
+-----------------------					   
+4. Scalability Proposal
+-----------------------
+• A brief plan for:
+Q:	Handling new company names over time
+A:	Run ETL jobs daily or on change detection.
+	Unmatched entries flagged for manual review or added automatically.
+
+Q:	Maintaining this mapping table (manual vs. automated)
+A:	Canonical name mappings stored as a golden reference table.
+	Manual override feature can be added for edge cases.
+	
+Q:	Integrating this process into a CI/CD pipeline or data platform (optional but appreciated)		
+A:	Can integrate into Airflow, Azure Data Factory, or Jenkins for automation.
+	APIs from System A & B already simulated, ready for integration.
+	Validation scripts can be part of data quality checks in pipeline.
+
